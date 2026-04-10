@@ -14,7 +14,7 @@ void function PK_MapVote()
         return
     }
 
-    AddCallback_GameStateEnter(eGameState.Postmatch, PostMatch_ChangeMap)
+    // AddCallback_GameStateEnter(eGameState.Postmatch, PostMatch_ChangeMap)
     thread StoreCurrentMap()
     // thread MapVoteThink()
 }
