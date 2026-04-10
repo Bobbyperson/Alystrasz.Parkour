@@ -16,7 +16,7 @@ void function PK_MapVote()
 
     AddCallback_GameStateEnter(eGameState.Postmatch, PostMatch_ChangeMap)
     thread StoreCurrentMap()
-    thread MapVoteThink()
+    // thread MapVoteThink()
 }
 
 void function MapVoteThink()
