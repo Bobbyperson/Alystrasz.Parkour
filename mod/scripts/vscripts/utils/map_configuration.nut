@@ -80,9 +80,27 @@ struct {
 void function PK_InitializeMapConfiguration()
 {
     // Load map configuration either from local file or distant API
+    array<string> realmaps
     bool useLocal = GetConVarInt("parkour_use_local_config") == 1
-
-    if (useLocal) {
+    void functionref( string ) onFileLoad = void function ( string result ) : (realmaps)
+    {
+        table data = DecodeJSON(result)
+        array maps = expect array(data["throw maps here that when server goes to, it uses local config"])
+        
+        foreach (map in maps){
+            
+            addsomemoremaps(expect string(map))
+            printt("WOAG MAP"+expect string(map))
+            realmaps.append(expect string(map)+"")
+        }
+    }
+    
+    NSLoadFile("shoulduselocalmapsonthesemaps.json", onFileLoad)
+    while (realmaps.len() == 0){
+        WaitFrame()
+    }
+    if (useLocal || realmaps.contains(GetMapName())) {
+        printt("I GOT HERE")
         print("Loading map configuration from local file.")
         InitializeMapConfigurationFromFile()
     } else {
