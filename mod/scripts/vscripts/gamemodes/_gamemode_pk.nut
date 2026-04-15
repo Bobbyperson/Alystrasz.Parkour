@@ -173,8 +173,8 @@ void function MovePlayerToMapStart( entity player )
 		PhaseShift(player, 0, 1)
 		entity mover = CreateOwnedScriptMover (player)
 		player.SetParent(mover)
-		mover.NonPhysicsMoveTo (pullsavespot(player)["pos"], 1, 0, 0)
-		mover.NonPhysicsRotateTo (pullsavespot(player)["angle"], 1, 0, 0)
+		mover.NonPhysicsMoveTo (PK_checkpoints[0], 1, 0, 0)
+		mover.NonPhysicsRotateTo (PK_startAngles, 1, 0, 0)
 		wait 1
 
 		player.SetVelocity(<0,0,0>)
@@ -186,8 +186,8 @@ void function MovePlayerToMapStart( entity player )
 	PK_ResetPlayerStats( player, true )
 	ResetPlayerCooldowns(player)
 	
-	// RespawnPlayerToConfirmedCheckpoint(player)
-	player.SetAngles(pullsavespot(player)["angle"])
+	RespawnPlayerToConfirmedCheckpoint(player)
+	player.SetAngles(PK_startAngles)
 }
 
 int function ParkourDecideWinner()

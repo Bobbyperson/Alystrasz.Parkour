@@ -1,6 +1,5 @@
 global function PK_InitializeMapConfiguration
 global function DebugPK_GetEntity
-global function pullsavespot
 
 /**
  * This global object holds parkour API information needed to interact
@@ -18,9 +17,6 @@ global struct PK_Credentials {
     string secret
     array<string> maps = []
 }
-
-global table<string, table < string, vector > > pk_savespots
-
 global PK_Credentials PK_credentials
 
 /**
@@ -81,111 +77,8 @@ struct {
  *
  * Map configuration can be fetched from two sources: Parkour API or local file.
  **/
-void function reloadmapw(){
-    ServerCommand("reload")
-}
-
-bool function reloadmap(entity player, array<string> args) {
-    delaythread (5) reloadmapw()
-    discordlogsendmessage("reloading map in 5s")
-    return true
-}
-void function loadsavespots(){
-    if (!NSDoesFileExist("savespots.json")){
-        return
-    }
-    void functionref( string ) onFileLoad = void function ( string result )
-    {
-        table data = DecodeJSON(result)
-
-        // Check if current map has save data
-        if (!(GetMapName() in data)) {
-            return
-        }
-
-        array mapplayers = expect array(data[GetMapName()])
-
-        foreach (player in mapplayers){
-            table playerdata = expect table(player)
-            string uid = expect string(playerdata["uid"])
-            array posArray = expect array(playerdata["pos"])
-            array angleArray = expect array(playerdata["angle"])
-
-            pk_savespots[uid] <- {
-                pos = PK_ArrayToFloatVector(posArray),
-                angle = PK_ArrayToFloatVector(angleArray)
-            }
-        }
-    }
-    
-    NSLoadFile("savespots.json", onFileLoad)
-}
-void function saveplayerspot(entity player,bool deletee = false){
-    pk_savespots[player.GetUID()] <- {pos=player.GetOrigin(),angle=player.GetViewVector()}
-    if (deletee){
-        delete pk_savespots[player.GetUID()]
-    }
-
-    void functionref( string ) onFileLoad = void function ( string result )
-    {
-        table data
-
-        // Handle empty or non-existent file
-        if (result == "") {
-            data = {}
-        } else {
-            data = DecodeJSON(result)
-        }
-
-        // Convert pk_savespots nested table to array format for JSON serialization
-        array playerArray = []
-        foreach (uid, spotData in pk_savespots) {
-
-            table playerSpot = {
-                uid = uid,
-                pos = [spotData["pos"].x, spotData["pos"].y, spotData["pos"].z],
-                angle = [spotData["angle"].x, spotData["angle"].y, spotData["angle"].z]
-            }
-            playerArray.append(playerSpot)
-        }
-
-        data[GetMapName()] <- playerArray
-        NSSaveFile("savespots.json",EncodeJSON(data))
-    }
-
-    if (!NSDoesFileExist("savespots.json")) {
-        NSSaveFile("savespots.json", "{}")
-    }
-
-    NSLoadFile("savespots.json", onFileLoad)
-
-}
-
-bool function savespotwrapper(entity player, array<string> args){
-    saveplayerspot(player)
-    discordlogsendmessage("[38;5;189msaving this spot",4,[player.GetUID()])
-    return true
-}
-bool function resetplayerspotwrapper(entity player, array<string> args){
-    saveplayerspot(player,true)
-    discordlogsendmessage("[38;5;189mremoving save spot",4,[player.GetUID()])
-    
-    return true
-}
-
-table <string, vector> function pullsavespot(entity player){
-    if (player.GetUID() in pk_savespots){
-        return pk_savespots[player.GetUID()]
-    }
-    return {pos=PK_checkpoints[0],angle=PK_startAngles}
-}
-
 void function PK_InitializeMapConfiguration()
 {
-    thread loadsavespots()
-    KcommandArr.append(new_KCommandStruct(["reload"], false,  reloadmap, 0, "reload the current map"))
-    KcommandArr.append(new_KCommandStruct(["reset","re"], false,  resetplayerspotwrapper, 0, "reset your custom save spot"))
-    KcommandArr.append(new_KCommandStruct(["save","sa"], false,  savespotwrapper, 0, "save a custom save spot"))
     // Load map configuration either from local file or distant API
     array<string> realmaps
     bool useLocal = GetConVarInt("parkour_use_local_config") == 1
